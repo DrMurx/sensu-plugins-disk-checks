@@ -65,7 +65,10 @@ class Disk
   # Setup variables
   #
   def initialize(name, override, ignore)
+    (name, *options) = name.split(':')
+
     @device_path = "/dev/#{name}"
+    @device_options = options
     @override_path = override
     @att_ignore = ignore
   end
@@ -80,12 +83,16 @@ class Disk
     end
   end
 
+  def device_path_with_options
+    @device_options.length ? "#{device_path} -d #{@device_options.join(',')}" : device_path
+  end
+
   def smart_ignore?(num)
     return if @att_ignore.nil?
     @att_ignore.include? num
   end
 
-  public :device_path, :smart_ignore?
+  public :device_path, :device_path_with_options, :smart_ignore?
 end
 
 #
@@ -204,10 +211,10 @@ class SmartCheckStatus < Sensu::Plugin::Check::CLI
     warnings = []
     criticals = []
     devices.each do |dev|
-      puts "#{config[:binary]} #{parameters} #{dev.device_path}" if @smart_debug
+      puts "#{config[:binary]} #{parameters} #{dev.device_path_with_options}" if @smart_debug
       # check if debug file specified
       if config[:debug_file].nil?
-        output[dev] = `#{smartctl} #{parameters} #{dev.device_path}`
+        output[dev] = `#{smartctl} #{parameters} #{dev.device_path_with_options}`
       else
         test_file = File.open(config[:debug_file], 'rb')
         output[dev] = test_file.read

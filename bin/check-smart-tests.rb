@@ -49,7 +49,7 @@ class Device
   end
 
   def poweron_hours
-    `#{smartctl} -A #{@name}`.split("\n").each do |line|
+    `#{smartctl} -A #{device_path_with_options}`.split("\n").each do |line|
       columns = line.split
       if columns[1] == 'Power_On_Hours'
         return columns[9]
@@ -61,7 +61,7 @@ class Device
     results = []
     headers = %w(num test_description status remaining lifetime lba_of_first_error)
 
-    `#{smartctl} -l selftest #{@name}`.split("\n").grep(/^#/).each do |test|
+    `#{smartctl} -l selftest #{device_path_with_options}`.split("\n").grep(/^#/).each do |test|
       test = test.gsub!(/\s\s+/m, "\t").split("\t")
       res = {}
 
@@ -79,6 +79,15 @@ class Device
   def smartctl
     sudo = Process.uid != 0 ? 'sudo' : ''
     "#{sudo} #{@exec}".strip
+  end
+
+  def device_path_with_options
+    (dev, *options) = @name.split(':')
+    if options.length
+      "#{dev} -d #{options.join(',')}"
+    else
+      dev
+    end
   end
 
 end

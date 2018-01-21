@@ -46,7 +46,10 @@ class Disk
   # Setup variables
   #
   def initialize(name, override, binary)
+    (name, *options) = name.split(':')
+
     @device_path = "/dev/#{name}"
+    @device_options = options
     @smart_available = false
     @smart_enabled = false
     @smart_healty = nil
@@ -74,10 +77,14 @@ class Disk
     end
   end
 
+  def device_options
+    @device_options.length ? "-d #{@device_options.join(',')}" : ""
+  end
+
   # Check for SMART cspability
   #
   def check_smart_capability!
-    output = `#{smartctl} -i #{device_path}`
+    output = `#{smartctl} -i #{device_options} #{device_path}`
 
     # Newer smartctl
     @smart_available = !output.scan(/SMART support is:\s+Available/).empty?
@@ -95,7 +102,7 @@ class Disk
   # Check the SMART health
   #
   def check_health!
-    output = `#{smartctl} -H #{device_path}`
+    output = `#{smartctl} -H #{device_options} #{device_path}`
     @smart_healthy = !output.scan(/PASSED|OK$/).empty?
     @health_output = output
   end
