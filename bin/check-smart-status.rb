@@ -207,7 +207,7 @@ class SmartCheckStatus < Sensu::Plugin::Check::CLI
       puts "#{config[:binary]} #{parameters} #{dev.device_path}" if @smart_debug
       # check if debug file specified
       if config[:debug_file].nil?
-        output[dev] = `sudo #{config[:binary]} #{parameters} #{dev.device_path}`
+        output[dev] = `#{smartctl} #{parameters} #{dev.device_path}`
       else
         test_file = File.open(config[:debug_file], 'rb')
         output[dev] = test_file.read
@@ -292,7 +292,7 @@ class SmartCheckStatus < Sensu::Plugin::Check::CLI
 
         device = Disk.new(name, override, ignore)
 
-        output = `sudo #{config[:binary]} -i #{device.device_path}`
+        output = `#{smartctl} -i #{device.device_path}`
 
         # Check if we can use this device or not
         available = !output.scan(/SMART support is:\s+Available/).empty?
@@ -316,4 +316,11 @@ class SmartCheckStatus < Sensu::Plugin::Check::CLI
 
     attributes
   end
+
+  private
+  def smartctl
+    sudo = Process.uid != 0 ? 'sudo' : ''
+    "#{sudo} #{config[:binary]}".strip
+  end
+
 end

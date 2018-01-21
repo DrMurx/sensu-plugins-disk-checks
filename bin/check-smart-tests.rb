@@ -49,7 +49,7 @@ class Device
   end
 
   def poweron_hours
-    `sudo #{@exec} -A #{@name}`.split("\n").each do |line|
+    `#{smartctl} -A #{@name}`.split("\n").each do |line|
       columns = line.split
       if columns[1] == 'Power_On_Hours'
         return columns[9]
@@ -61,7 +61,7 @@ class Device
     results = []
     headers = %w(num test_description status remaining lifetime lba_of_first_error)
 
-    `sudo #{@exec} -l selftest #{@name}`.split("\n").grep(/^#/).each do |test|
+    `#{smartctl} -l selftest #{@name}`.split("\n").grep(/^#/).each do |test|
       test = test.gsub!(/\s\s+/m, "\t").split("\t")
       res = {}
 
@@ -74,6 +74,13 @@ class Device
 
     results
   end
+
+  private
+  def smartctl
+    sudo = Process.uid != 0 ? 'sudo' : ''
+    "#{sudo} #{@exec}".strip
+  end
+
 end
 
 class CheckSMARTTests < Sensu::Plugin::Check::CLI
